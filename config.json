@@ -2,6 +2,7 @@
     "base_model": "answerdotai/ModernBERT-base",
     "MAX_TOKEN_LENGTH": 8192,
     "task_type": "multiclass",
+    "dataset_csv": "data/interm/binary.csv",
     "train_file": "data/processed/multiclass_banking77/train.csv",
     "test_file": "data/processed/multiclass_banking77/test.csv",
     "valid_file": "data/processed/multiclass_banking77/valid.csv",
