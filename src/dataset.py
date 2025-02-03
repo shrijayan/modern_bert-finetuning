@@ -2,6 +2,7 @@ import json
 import csv
 from datasets import load_dataset
 from transformers import AutoTokenizer
+import numpy as np
 
 # Load configuration from config.json
 with open('config.json', 'r') as config_file:
@@ -40,11 +41,24 @@ def tokenize_dataset(dataset, tokenizer):
         return tokenizer(batch['text'], padding="max_length", truncation=True, return_tensors="pt")
     return dataset.map(tokenize, batched=True, remove_columns=["text"])
 
-def load_and_preprocess_dataset(model_id):
+def load_and_preprocess_dataset(model_id, task_type):
     raw_dataset = load_raw_dataset()
     tokenizer = get_tokenizer(model_id)
-    tokenized_dataset = tokenize_dataset(raw_dataset, tokenizer)
     label_names = get_label_names(dataset_csv)
+    label2id = {label: i for i, label in enumerate(label_names)}
+
+    if task_type in ["binary", "multiclass"]:
+        raw_dataset = raw_dataset.map(lambda example: {'label': label2id.get(example['label'], -1)})
+    elif task_type == "multilabel":
+        raw_dataset = raw_dataset.map(lambda example: {'label': [label2id.get(label, -1) for label in example['label'].split(',')]})
+
+    tokenized_dataset = tokenize_dataset(raw_dataset, tokenizer)
+    return tokenized_dataset, label_names
+    tokenizer = get_tokenizer(model_id)
+    label_names = get_label_names(dataset_csv)
+    label2id = {label: i for i, label in enumerate(label_names)}
+    raw_dataset = raw_dataset.map(lambda example: {'label': label2id[example['label']]})
+    tokenized_dataset = tokenize_dataset(raw_dataset, tokenizer)
     return tokenized_dataset, label_names
 
 if __name__ == "__main__":

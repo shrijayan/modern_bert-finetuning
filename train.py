@@ -9,12 +9,12 @@ from src.eval import compute_metrics
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
-def train_model(model_id):
+def train_model(model_id, task_type):
     """
     Full pipeline for training.
     """
     
-    tokenized_dataset, label_names = load_and_preprocess_dataset(model_id)
+    tokenized_dataset, label_names = load_and_preprocess_dataset(model_id, task_type)
     
     labels = label_names
     num_labels = len(labels)
@@ -37,7 +37,6 @@ def train_model(model_id):
         logging_steps=100,
         # eval_strategy="epoch",
         save_strategy="epoch",
-        use_mps_device=True,
         save_total_limit=2,
         # load_best_model_at_end=True,
         metric_for_best_model="f1",
@@ -55,4 +54,4 @@ def train_model(model_id):
     trainer.train()
 
 if __name__ == "__main__":
-    train_model(config["base_model"])
+    train_model(config["base_model"], config["task_type"])
