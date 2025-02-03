@@ -50,7 +50,7 @@ def load_and_preprocess_dataset(model_id, task_type):
     if task_type in ["binary", "multiclass"]:
         raw_dataset = raw_dataset.map(lambda example: {'label': label2id.get(example['label'], -1)})
     elif task_type == "multilabel":
-        raw_dataset = raw_dataset.map(lambda example: {'label': [label2id.get(label, -1) for label in example['label'].split(',')]})
+        raw_dataset = raw_dataset.map(lambda example: {'label': [1 if label in example['label'].split(',') else 0 for label in label_names]})
 
     tokenized_dataset = tokenize_dataset(raw_dataset, tokenizer)
     return tokenized_dataset, label_names
