@@ -1,6 +1,6 @@
 import json
 import csv
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer
 import numpy as np
 
@@ -41,6 +41,15 @@ def tokenize_dataset(dataset, tokenizer):
         return tokenizer(batch['text'], padding="max_length", truncation=True, return_tensors="pt")
     return dataset.map(tokenize, batched=True, remove_columns=["text"])
 
+def split_dataset(dataset):
+    train_testvalid = dataset['train'].train_test_split(test_size=0.2)
+    test_valid = train_testvalid['test'].train_test_split(test_size=0.5)
+    return DatasetDict({
+        'train': train_testvalid['train'],
+        'test': test_valid['test'],
+        'validation': test_valid['train']
+    })
+
 def load_and_preprocess_dataset(model_id, task_type):
     raw_dataset = load_raw_dataset()
     tokenizer = get_tokenizer(model_id)
@@ -52,13 +61,8 @@ def load_and_preprocess_dataset(model_id, task_type):
     elif task_type == "multilabel":
         raw_dataset = raw_dataset.map(lambda example: {'label': [1 if label in example['label'].split(',') else 0 for label in label_names]})
 
-    tokenized_dataset = tokenize_dataset(raw_dataset, tokenizer)
-    return tokenized_dataset, label_names
-    tokenizer = get_tokenizer(model_id)
-    label_names = get_label_names(dataset_csv)
-    label2id = {label: i for i, label in enumerate(label_names)}
-    raw_dataset = raw_dataset.map(lambda example: {'label': label2id[example['label']]})
-    tokenized_dataset = tokenize_dataset(raw_dataset, tokenizer)
+    split_raw_dataset = split_dataset(raw_dataset)
+    tokenized_dataset = tokenize_dataset(split_raw_dataset, tokenizer)
     return tokenized_dataset, label_names
 
 if __name__ == "__main__":

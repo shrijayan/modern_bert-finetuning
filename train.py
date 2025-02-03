@@ -28,18 +28,20 @@ def train_model(model_id, task_type):
     training_args = TrainingArguments(
         output_dir= "ModernBERT-domain-classifier",
         per_device_train_batch_size=1,
-        # per_device_eval_batch_size=1,
+        per_device_eval_batch_size=1,
         learning_rate=5e-5,
         num_train_epochs=5,
-        bf16=True, 
-        optim="adamw_torch_fused", 
+        bf16=True, # bfloat16 training
+        optim="adamw_torch_fused", # improved optimizer
+        # logging & evaluation strategies
         logging_strategy="steps",
         logging_steps=100,
-        # eval_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         save_total_limit=2,
-        # load_best_model_at_end=True,
+        load_best_model_at_end=True,
         metric_for_best_model="f1",
+        # push to hub parameters
         hub_strategy="every_save",
         hub_token=HfFolder.get_token(),
     )
@@ -48,7 +50,7 @@ def train_model(model_id, task_type):
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset["train"],
-        # eval_dataset=tokenized_dataset["test"],
+        eval_dataset=tokenized_dataset["test"],
         compute_metrics=compute_metrics,
     )
     trainer.train()
