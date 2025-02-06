@@ -1,39 +1,37 @@
 import json
-from transformers import Trainer, TrainingArguments
+from transformers import Trainer, TrainingArguments, AutoModelForSequenceClassification
 from src.dataset import load_and_preprocess_dataset
-from src.model import load_model
 from huggingface_hub import HfFolder
 from src.eval import compute_metrics
 
-# Load configuration from config.json
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 def train_model(model_id, task_type):
-    """
-    Full pipeline for training.
-    """
-    
-    tokenized_dataset, label_names = load_and_preprocess_dataset(model_id, task_type)
-    
-    labels = label_names
-    num_labels = len(labels)
-    label2id, id2label = dict(), dict()
-    for i, label in enumerate(labels):
-        label2id[label] = str(i)
-        id2label[str(i)] = label
-    
-    model = load_model(model_id, num_labels, label2id, id2label)
-    
+
+    tokenized_dataset, label_names, tokenizer = load_and_preprocess_dataset(model_id, task_type)
+
+    num_labels = len(label_names)
+    label2id = {label: i for i, label in enumerate(label_names)}
+    id2label = {i: label for i, label in enumerate(label_names)}
+
+    model = AutoModelForSequenceClassification.from_pretrained( # Load classification model
+        model_id,
+        num_labels=num_labels,
+        label2id=label2id,
+        id2label=id2label,
+        problem_type="multi_label_classification"
+    )
+
     training_args = TrainingArguments(
-        output_dir= "ModernBERT-domain-classifier",
+        output_dir= "results/ModernBERT-domain-classifier",
+        overwrite_output_dir=True, # Overwrite if checkpoint exists
         per_device_train_batch_size=1,
         per_device_eval_batch_size=1,
-        learning_rate=5e-5,
-        num_train_epochs=5,
-        bf16=True, # bfloat16 training
-        optim="adamw_torch_fused", # improved optimizer
-        # logging & evaluation strategies
+        learning_rate = 5e-5,
+        num_train_epochs = 1,
+        bf16=False, 
+        optim="adamw_torch_fused",
         logging_strategy="steps",
         logging_steps=100,
         eval_strategy="epoch",
@@ -41,9 +39,9 @@ def train_model(model_id, task_type):
         save_total_limit=2,
         load_best_model_at_end=True,
         metric_for_best_model="f1",
-        # push to hub parameters
+        push_to_hub = False,
         hub_strategy="every_save",
-        hub_token=HfFolder.get_token(),
+        hub_token=HfFolder.get_token(), # Ensure you have HF token setup if pushing to hub
     )
 
     trainer = Trainer(
@@ -51,6 +49,7 @@ def train_model(model_id, task_type):
         args=training_args,
         train_dataset=tokenized_dataset["train"],
         eval_dataset=tokenized_dataset["test"],
+        tokenizer=tokenizer,
         compute_metrics=compute_metrics,
     )
     trainer.train()
