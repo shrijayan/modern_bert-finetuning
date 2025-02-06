@@ -76,7 +76,7 @@ def load_and_preprocess_dataset(model_id, task_type):
     # print(f"label2id: {label2id}")
 
     if task_type in ["binary", "multiclass"]:
-        raw_dataset = raw_dataset.map(lambda example: {'labels': label2id.get(example['labels'], -1)})
+        raw_dataset = raw_dataset.map(lambda example: {'labels': float(label2id.get(example['labels'], -1))})
         # print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
         
     elif task_type == "multilabel":
@@ -90,7 +90,7 @@ def load_and_preprocess_dataset(model_id, task_type):
 
             # Create a multi-hot vector (list of 0s and 1s) for each example
             labels_binary = [1 if label in label_list else 0 for label in label_names]
-            return {'labels': labels_binary}
+            return {'labels': [float(label) for label in labels_binary]}
 
         raw_dataset = raw_dataset.map(map_labels_multilabel)
         # print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
