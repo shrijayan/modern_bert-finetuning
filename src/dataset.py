@@ -65,19 +65,19 @@ def split_dataset(dataset):
 
 def load_and_preprocess_dataset(model_id, task_type):
     raw_dataset = load_raw_dataset()
-    for row in raw_dataset['train']:
-        print(f"Text: {row['text']}, Label: {row['labels']}")
+    # for row in raw_dataset['train']:
+    #     print(f"Text: {row['text']}, Label: {row['labels']}")
     tokenizer = get_tokenizer(model_id)
-    print(f"tokenizer: {tokenizer}")
+    # print(f"tokenizer: {tokenizer}")
     label_names = get_label_names(dataset_csv)
-    print(f"label_names: {label_names}")
+    # print(f"label_names: {label_names}")
     
     label2id = {label: i for i, label in enumerate(label_names)}
-    print(f"label2id: {label2id}")
+    # print(f"label2id: {label2id}")
 
     if task_type in ["binary", "multiclass"]:
         raw_dataset = raw_dataset.map(lambda example: {'labels': label2id.get(example['labels'], -1)})
-        print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
+        # print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
         
     elif task_type == "multilabel":
         def map_labels_multilabel(example):
@@ -85,7 +85,7 @@ def load_and_preprocess_dataset(model_id, task_type):
             try:
                 label_list = ast.literal_eval(label_str) # Parse the string into a Python list
             except (ValueError, SyntaxError):
-                print(f"Warning: Could not parse labels string: {label_str}. Setting labels to empty list.")
+                # print(f"Warning: Could not parse labels string: {label_str}. Setting labels to empty list.")
                 label_list = [] # Handle parsing errors gracefully, maybe set to empty list
 
             # Create a multi-hot vector (list of 0s and 1s) for each example
@@ -93,10 +93,14 @@ def load_and_preprocess_dataset(model_id, task_type):
             return {'labels': labels_binary}
 
         raw_dataset = raw_dataset.map(map_labels_multilabel)
-        print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
+        # print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
 
     split_raw_dataset = split_dataset(raw_dataset)
+    # for row in split_raw_dataset['train']:
+    #     print(f"Text: {row['text']}, Label: {row['labels']}")
     tokenized_dataset = tokenize_dataset(split_raw_dataset, tokenizer)
+    # for row in tokenized_dataset['train']:
+    #     print(f"Labels: {row['labels']}, input_ids: {row['input_ids']}, attention_mask: {row['attention_mask']}")
     return tokenized_dataset, label_names, tokenizer
 
 if __name__ == "__main__":
