@@ -2,16 +2,12 @@ import json
 import csv
 from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer
-import numpy as np
+import ast
 
-# Load configuration from config.json
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 # Extract values from config
-train_file = config['train_file']
-test_file = config['test_file']
-valid_file = config['valid_file']
 model_id = config['base_model']
 task_type = config['task_type']
 dataset_id = config['dataset_id']
@@ -19,21 +15,38 @@ MAX_TOKEN_LENGTH = config['MAX_TOKEN_LENGTH']
 dataset_csv = config['dataset_csv']
 
 def load_raw_dataset():
-    dataset = load_dataset("csv", data_files=dataset_csv)
+    dataset = load_dataset("csv", data_files=dataset_csv, index_col=False)
     return dataset
 
 def get_label_names(dataset_csv):
-    unique_labels = set()
-    with open(dataset_csv, 'r', newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
+    unique_values = set()
+    with open(dataset_csv, 'r', newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        try:
+            headers = next(reader)
+        except StopIteration:
+            return []
+        try:
+            col_index = headers.index('labels')
+        except ValueError:
+            return []
         for row in reader:
-            if 'label' in row:
-                unique_labels.add(row['label'])
-    return sorted(list(unique_labels))
+            if col_index < len(row):
+                label_str = row[col_index]
+                try:
+                    # Safely evaluate the string as a Python list
+                    label_list = ast.literal_eval(label_str)
+                    if isinstance(label_list, list): # Ensure it's actually a list
+                        for label in label_list:
+                            unique_values.add(label)
+                except (ValueError, SyntaxError):
+                    # Handle cases where the string is not a valid list representation
+                    print(f"Warning: Could not parse labels string: {label_str} in row: {row}")
+                    continue # Or handle it as needed (e.g., skip the row, log error)
+    return list(unique_values)
 
 def get_tokenizer(model_id):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    tokenizer.model_max_length = MAX_TOKEN_LENGTH
     return tokenizer
 
 def tokenize_dataset(dataset, tokenizer):
@@ -52,19 +65,40 @@ def split_dataset(dataset):
 
 def load_and_preprocess_dataset(model_id, task_type):
     raw_dataset = load_raw_dataset()
+    for row in raw_dataset['train']:
+        print(f"Text: {row['text']}, Label: {row['labels']}")
     tokenizer = get_tokenizer(model_id)
+    print(f"tokenizer: {tokenizer}")
     label_names = get_label_names(dataset_csv)
+    print(f"label_names: {label_names}")
+    
     label2id = {label: i for i, label in enumerate(label_names)}
+    print(f"label2id: {label2id}")
 
     if task_type in ["binary", "multiclass"]:
-        raw_dataset = raw_dataset.map(lambda example: {'label': label2id.get(example['label'], -1)})
+        raw_dataset = raw_dataset.map(lambda example: {'labels': label2id.get(example['labels'], -1)})
+        print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
+        
     elif task_type == "multilabel":
-        raw_dataset = raw_dataset.map(lambda example: {'label': [1 if label in example['label'].split(',') else 0 for label in label_names]})
+        def map_labels_multilabel(example):
+            label_str = example['labels'] # Get the string representation of the label list
+            try:
+                label_list = ast.literal_eval(label_str) # Parse the string into a Python list
+            except (ValueError, SyntaxError):
+                print(f"Warning: Could not parse labels string: {label_str}. Setting labels to empty list.")
+                label_list = [] # Handle parsing errors gracefully, maybe set to empty list
+
+            # Create a multi-hot vector (list of 0s and 1s) for each example
+            labels_binary = [1 if label in label_list else 0 for label in label_names]
+            return {'labels': labels_binary}
+
+        raw_dataset = raw_dataset.map(map_labels_multilabel)
+        print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
 
     split_raw_dataset = split_dataset(raw_dataset)
     tokenized_dataset = tokenize_dataset(split_raw_dataset, tokenizer)
-    return tokenized_dataset, label_names
+    return tokenized_dataset, label_names, tokenizer
 
 if __name__ == "__main__":
-    tokenized_dataset = load_and_preprocess_dataset(model_id, task_type)
-    print(tokenized_dataset["train"].features.keys())
+    tokenized_dataset, label_names = load_and_preprocess_dataset(model_id, task_type)
+    # print(tokenized_dataset["train"].features.keys())
