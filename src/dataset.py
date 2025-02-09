@@ -93,8 +93,10 @@ def load_and_preprocess_dataset(model_id, task_type):
             return {'labels': [float(label) for label in labels_binary]}
 
         raw_dataset = raw_dataset.map(map_labels_multilabel)
-        # print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
+        print(f"raw_dataset: {raw_dataset["train"]["labels"]}")
 
+    for row in raw_dataset['train']:
+        print(f"Text: {row['text']}, Label: {row['labels']}")
     split_raw_dataset = split_dataset(raw_dataset)
     # for row in split_raw_dataset['train']:
     #     print(f"Text: {row['text']}, Label: {row['labels']}")
