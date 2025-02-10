@@ -3,3 +3,11 @@ text,label
 Did  my transfer fail?,positive
 "I need to exchange my GBP to AUD, how would I do this?",negative
 How do I receive a card?,positive
+"I made a mistake when making my last transfer, please cancel before it goes thru.",negative
+Did  my transfer fail?,positive
+"I need to exchange my GBP to AUD, how would I do this?",negative
+How do I receive a card?,positive
+"I made a mistake when making my last transfer, please cancel before it goes thru.",negative
+Did  my transfer fail?,positive
+"I need to exchange my GBP to AUD, how would I do this?",negative
+How do I receive a card?,positive

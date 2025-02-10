@@ -1,5 +1,15 @@
-text,label
-"I made a mistake when making my last transfer, please cancel before it goes thru.",[plan,initiate]
-Did  my transfer fail?,[finish,time]
-"I need to exchange my GBP to AUD, how would I do this?",[start,plan]
-How do I receive a card?,[start,finish]
+text,labels
+"I made a mistake when making my last transfer, please cancel before it goes thru.","[""plan"",""initiate""]"
+Did  my transfer fail?,"[""finish"",""time""]"
+"I need to exchange my GBP to AUD, how would I do this?","[""start"", ""plan""]"
+How do I receive a card?,"[""start"", ""finish""]"
+"I made a mistake when making my last transfer, please cancel before it goes thru.","[""plan"",""initiate""]"
+Did  my transfer fail?,"[""finish"", ""game""]"
+"I need to exchange my GBP to AUD, how would I do this?","[""start"", ""plan""]"
+How do I receive a card?,"[""start"", ""finish""]"
+"I made a mistake when making my last transfer, please cancel before it goes thru.","[""plan"", ""think""]"
+Did  my transfer fail?,"[""new"", ""time""]"
+"I need to exchange my GBP to AUD, how would I do this?","[""start"", ""plan""]"
+How do I receive a card?,"[""start"", ""finish""]"
+"I made a mistake when making my last transfer, please cancel before it goes thru.","[""walk"", ""initiate""]"
+Did  my transfer fail?,"[""finish"", ""end""]"
